@@ -3,41 +3,53 @@ from pydantic import BaseModel
 from datetime import datetime
 import uuid
 
-app = FastAPI(title="Envonvia API", version="1.0")
+app = FastAPI(title="API Envolvia", version="1.0")
 
-# Memória simples em RAM (MVP)
+# Memória simples em RAM (por enquanto)
 memory = []
 
-class Interaction(BaseModel):
+class ChatInput(BaseModel):
     user_id: str
     message: str
-    feedback: int | None = None
+
+class ChatResponse(BaseModel):
+    reply: str
+    memory_size: int
+    time: str
 
 @app.get("/")
 def root():
     return {
         "status": "online",
-        "name": "Envonvia",
-        "time": datetime.utcnow()
+        "name": "Envolvia",
+        "time": datetime.utcnow().isoformat()
     }
 
-@app.post("/interact")
-def interact(data: Interaction):
-    record = {
-        "id": str(uuid.uuid4()),
-        "user": data.user_id,
+@app.post("/chat", response_model=ChatResponse)
+def chat(data: ChatInput):
+    interaction_id = str(uuid.uuid4())
+
+    # Resposta simples (placeholder de IA)
+    reply = f"Recebi sua mensagem: '{data.message}'"
+
+    # Salva na memória
+    memory.append({
+        "id": interaction_id,
+        "user_id": data.user_id,
         "message": data.message,
-        "feedback": data.feedback,
-        "timestamp": datetime.utcnow()
-    }
-    memory.append(record)
+        "reply": reply,
+        "time": datetime.utcnow().isoformat()
+    })
 
     return {
-        "response": "Aprendi com essa interação.",
+        "reply": reply,
         "memory_size": len(memory),
-        "last_record": record
+        "time": datetime.utcnow().isoformat()
     }
 
 @app.get("/memory")
 def get_memory():
-    return memory
+    return {
+        "total_interactions": len(memory),
+        "data": memory
+    }
